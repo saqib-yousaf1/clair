@@ -59,10 +59,10 @@ if [ -d "$thehost_DIR/backend" ]; then
   npm ci --production
 
   # start or restart pm2
-  if pm2 list | grep -q living-wall-backend; then
-    pm2 restart living-wall-backend || pm2 start index.js --name living-wall-backend
+  if pm2 list | grep -q the-host; then
+    pm2 restart the-host || pm2 start index.js --name the-host
   else
-    pm2 start index.js --name living-wall-backend
+    pm2 start index.js --name the-host
   fi
   pm2 save
 fi
