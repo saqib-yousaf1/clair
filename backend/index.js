@@ -140,7 +140,7 @@ app.post('/api/anam/session-token', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' })
   })
 
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`)
 })
