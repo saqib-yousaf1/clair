@@ -1,4 +1,4 @@
-name: CI/CD Deploy
+name: CI/CD thehost
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build-and-thehost:
     runs-on: ubuntu-latest
 
     steps:
@@ -63,16 +63,16 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: Ensure remote deploy directory exists
+      - name: Ensure remote thehost directory exists
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} 'mkdir -p /home/ubuntu/deploy && chown ubuntu:ubuntu /home/ubuntu/deploy'
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} 'mkdir -p /home/ubuntu/thehost && chown ubuntu:ubuntu /home/ubuntu/thehost'
 
       - name: Copy files to EC2 via scp
         run: |
-          echo 'Copying backend tarball, frontend tarball and deploy script to EC2'
-          scp -o StrictHostKeyChecking=no ./backend.tar.gz ./frontend-dist.tar.gz ./scripts/remote_deploy.sh ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/deploy
+          echo 'Copying backend tarball, frontend tarball and thehost script to EC2'
+          scp -o StrictHostKeyChecking=no ./backend.tar.gz ./frontend-dist.tar.gz ./scripts/remote_thehost.sh ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/thehost
 
-      - name: Run remote deploy commands
+      - name: Run remote thehost commands
         uses: appleboy/ssh-action@v0.1.9
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -81,11 +81,11 @@ jobs:
           port: 22
           script: |
             set -e
-            # list remote deploy dir for debugging
-            ls -la /home/ubuntu/deploy || true
-            # ensure deploy script (copied alongside artifacts) is executable and run it
-            chmod +x /home/ubuntu/deploy/remote_deploy.sh || true
+            # list remote thehost dir for debugging
+            ls -la /home/ubuntu/thehost || true
+            # ensure thehost script (copied alongside artifacts) is executable and run it
+            chmod +x /home/ubuntu/thehost/remote_thehost.sh || true
             # export secret for the session so pm2 picks it up during start
             export ANAM_API_KEY="${{ secrets.ANAM_API_KEY }}"
-            /home/ubuntu/deploy/remote_deploy.sh
+            /home/ubuntu/thehost/remote_thehost.sh
 

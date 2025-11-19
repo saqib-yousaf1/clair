@@ -1,18 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-DEPLOY_DIR="/home/ubuntu/deploy"
-HOME_APP_DIR="/home/ubuntu/living-wall-2"
-FRONTEND_TAR="$DEPLOY_DIR/frontend-dist.tar.gz"
-BACKEND_TAR="$DEPLOY_DIR/backend.tar.gz"
+thehost_DIR="/home/ubuntu/thehost"
+HOME_APP_DIR="/home/ubuntu/TheHostProd"
+FRONTEND_TAR="$thehost_DIR/frontend-dist.tar.gz"
+BACKEND_TAR="$thehost_DIR/backend.tar.gz"
 
 # Ensure app dir exists and owned by ubuntu
 mkdir -p "$HOME_APP_DIR"
 chown -R ubuntu:ubuntu "$HOME_APP_DIR"
 
-# --------- Frontend deploy ----------
+# --------- Frontend thehost ----------
 if [ -f "$FRONTEND_TAR" ]; then
-  echo "Deploying frontend from $FRONTEND_TAR"
+  echo "thehosting frontend from $FRONTEND_TAR"
 
   TMPDIR=$(mktemp -d)
   tar -xzf "$FRONTEND_TAR" -C "$TMPDIR"
@@ -41,19 +41,19 @@ if [ -f "$FRONTEND_TAR" ]; then
   rm -rf "$TMPDIR"
 fi
 
-# --------- Backend deploy ----------
-# If backend tarball exists, extract to deploy dir and move into place
+# --------- Backend thehost ----------
+# If backend tarball exists, extract to thehost dir and move into place
 if [ -f "$BACKEND_TAR" ]; then
   echo "Extracting backend tarball"
-  rm -rf "$DEPLOY_DIR/backend"
-  mkdir -p "$DEPLOY_DIR/backend"
-  tar -xzf "$BACKEND_TAR" -C "$DEPLOY_DIR"
+  rm -rf "$thehost_DIR/backend"
+  mkdir -p "$thehost_DIR/backend"
+  tar -xzf "$BACKEND_TAR" -C "$thehost_DIR"
 fi
 
-if [ -d "$DEPLOY_DIR/backend" ]; then
+if [ -d "$thehost_DIR/backend" ]; then
   echo "Moving backend into $HOME_APP_DIR/backend"
   rm -rf "$HOME_APP_DIR/backend"
-  mv "$DEPLOY_DIR/backend" "$HOME_APP_DIR/backend"
+  mv "$thehost_DIR/backend" "$HOME_APP_DIR/backend"
 
   cd "$HOME_APP_DIR/backend"
   npm ci --production
@@ -70,4 +70,4 @@ fi
 # reload nginx gracefully
 sudo systemctl reload nginx || true
 
-echo "Deploy finished"
+echo "thehost finished"

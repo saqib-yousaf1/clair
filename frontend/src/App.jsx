@@ -5,7 +5,7 @@ import PersonDetection from './PersonDetection'
 import Login from './Login'
 
 const DEFAULT_PERSONA_CONFIG = Object.freeze({
-  personaId: 'fff175f8-0170-453b-be4b-360730a0f328',
+  personaId: '9527ce11-420e-4746-8172-a45bdd429426',
   voiceId: '5d67e1e3-8375-4185-ac84-b05464255d9c',
   systemPrompt: 'You are helpful assistant.',
   quality: 'high',
