@@ -1,0 +1,91 @@
+name: CI/CD Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build backend
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm run build || echo "no build step for backend"
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build:prod
+
+      - name: Archive frontend build
+        working-directory: ./frontend
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        run: |
+          # create tarball at the runner workspace root so subsequent steps can find it
+          # using absolute path to avoid any working-directory confusion
+          tar -czf "$GITHUB_WORKSPACE/frontend-dist.tar.gz" -C "$GITHUB_WORKSPACE/frontend" dist
+          echo 'Created frontend tar:'
+          ls -la "$GITHUB_WORKSPACE/frontend-dist.tar.gz"
+
+      - name: Debug workspace before SCP
+        run: |
+          echo 'Workspace listing:'
+          ls -la "$GITHUB_WORKSPACE"
+          echo 'frontend directory listing:'
+          ls -la "$GITHUB_WORKSPACE/frontend" || true
+          echo 'backend directory listing:'
+          ls -la "$GITHUB_WORKSPACE/backend" || true
+
+      - name: Archive backend (exclude node_modules)
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        run: |
+          echo 'Creating backend tarball excluding node_modules'
+          tar --exclude='./backend/node_modules' -czf "$GITHUB_WORKSPACE/backend.tar.gz" -C "$GITHUB_WORKSPACE" backend
+          ls -la "$GITHUB_WORKSPACE/backend.tar.gz"
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Ensure remote deploy directory exists
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} 'mkdir -p /home/ubuntu/deploy && chown ubuntu:ubuntu /home/ubuntu/deploy'
+
+      - name: Copy files to EC2 via scp
+        run: |
+          echo 'Copying backend tarball, frontend tarball and deploy script to EC2'
+          scp -o StrictHostKeyChecking=no ./backend.tar.gz ./frontend-dist.tar.gz ./scripts/remote_deploy.sh ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/deploy
+
+      - name: Run remote deploy commands
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            # list remote deploy dir for debugging
+            ls -la /home/ubuntu/deploy || true
+            # ensure deploy script (copied alongside artifacts) is executable and run it
+            chmod +x /home/ubuntu/deploy/remote_deploy.sh || true
+            # export secret for the session so pm2 picks it up during start
+            export ANAM_API_KEY="${{ secrets.ANAM_API_KEY }}"
+            /home/ubuntu/deploy/remote_deploy.sh
+
