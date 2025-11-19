@@ -14,7 +14,7 @@ Full-stack sample that issues session tokens through a lightweight Express backe
    cd backend
    copy .env.example .env
    ```
-   Update `ANAM_API_KEY` with your credential and adjust `PORT` (default `4000`) if needed.
+   Update `ANAM_API_KEY` with your credential and adjust `PORT` (default `5000`) if needed.
 2. Install dependencies (already done if you ran `npm install`, but safe to repeat):
    ```powershell
    npm install
@@ -39,7 +39,7 @@ The backend exposes `POST /api/anam/session-token`, forwarding the provided `per
    ```powershell
    npm run dev
    ```
-   Vite runs on `http://localhost:5173` by default and proxies `/api` calls to `http://localhost:4000`.
+   Vite runs on `http://localhost:5173` by default and proxies `/api` calls to `http://localhost:5000`.
 
 ## Persona Configuration
 
