@@ -40,8 +40,8 @@ function getCookie(req, name) {
   return null
 }
 
-const PASSWORD = process.env.PASSWORD || 'DIMEBY1'
-console.log('Using password:', !!process.env.PASSWORD ? 'from env' : 'default DIMEBY1')
+const PASSWORD = process.env.PASSWORD || 'Hedge1'
+console.log('Using password:', !!process.env.PASSWORD ? 'from env' : 'default Hedge1')
 
 // Protect /api routes except login/auth-check. Accept either session cookie
 // or x-access-password header matching PASSWORD.
