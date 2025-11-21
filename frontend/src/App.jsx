@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react'
 import './App.css'
 import AnamAvatar from './AnamAvatar'
 import PersonDetection from './PersonDetection'
-import Login from './Login'
 
 const DEFAULT_PERSONA_CONFIG = Object.freeze({
   personaId: '9527ce11-420e-4746-8172-a45bdd429426',
@@ -20,9 +19,10 @@ function App() {
   const [sessionToken, setSessionToken] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [authenticated, setAuthenticated] = useState(false)
+  // Authentication has been removed server-side; start authenticated
+  const [authenticated, setAuthenticated] = useState(true)
   const [authPassword, setAuthPassword] = useState(null)
-  const [authUsername, setAuthUsername] = useState(null)
+  const [authUsername, setAuthUsername] = useState('The Host')
   const [authSessionId, setAuthSessionId] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isStreamConnected, setIsStreamConnected] = useState(false)
@@ -36,29 +36,8 @@ function App() {
     try {
       const sid = localStorage.getItem('lw:sessionId')
       if (sid) {
+        // restore stored session id for header fallback (do not call backend)
         setAuthSessionId(sid)
-        // attempt to validate session with backend using header fallback
-        ;(async () => {
-          try {
-            const res = await fetch('/api/auth-check', {
-              method: 'GET',
-              headers: { 'x-session-id': sid },
-              credentials: 'include',
-            })
-            if (res.ok) {
-              const data = await res.json().catch(() => ({}))
-              setAuthUsername(data.username || 'The Host')
-              setAuthenticated(true)
-            } else {
-              // invalid sessionId -> clear
-              localStorage.removeItem('lw:sessionId')
-              setAuthSessionId(null)
-            }
-          } catch (e) {
-            // network error; keep sessionId but don't authenticate yet
-            console.warn('Auth-check failed:', e)
-          }
-        })()
       }
     } catch (e) {
       // ignore storage errors
@@ -69,6 +48,8 @@ function App() {
       document.body.style.overflow = ''
     }
   }, [isFullscreen])
+
+  // No global auth-check — authentication removed server-side
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev)
@@ -173,9 +154,9 @@ function App() {
   }
 
   const handleAuthenticated = ({ username, password }) => {
-    setAuthUsername(username || null)
+    // No-op: server no longer requires authentication
+    setAuthUsername(username || 'The Host')
     setAuthPassword(password || null)
-    // if login provided a sessionId (Login component persists it), read it
     try {
       const sid = localStorage.getItem('lw:sessionId')
       if (sid) setAuthSessionId(sid)
@@ -206,9 +187,7 @@ function App() {
     setAuthSessionId(null)
   }
 
-  if (!authenticated) {
-    return <Login onAuthenticated={handleAuthenticated} />
-  }
+  // Auth removed — always render the app UI
 
   return (
     <div className={`app${isFullscreen ? ' app--fullscreen' : ''}`}>
