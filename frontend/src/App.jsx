@@ -205,28 +205,6 @@ function App() {
             >
               {loading ? 'Connecting…' : 'Launch Stream'}
             </button>
-            <button
-              type="button"
-              onClick={logout}
-              className="ghost-button ghost-button--icon logout-button"
-              aria-label="Logout"
-              title="Logout"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" width="20" height="20">
-                <path
-                  d="M12 2v10"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.75"
-                />
-                <path
-                  d="M5.07 6.1a8 8 0 1 0 13.86 0"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.75"
-                />
-              </svg>
-            </button>
           </div>
           {error && (
             <div className="alert alert--error" role="alert">
