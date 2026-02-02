@@ -40,14 +40,34 @@ function getCookie(req, name) {
   return null
 }
 
-// Authentication removed: the server no longer requires a password for /api routes
+const PASSWORD = process.env.PASSWORD || 'DIMEBY1'
+console.log('Using password:', !!process.env.PASSWORD ? 'from env' : 'default DIMEBY1')
 
 // Protect /api routes except login/auth-check. Accept either session cookie
 // or x-access-password header matching PASSWORD.
 app.use((req, res, next) => {
   if (!req.url || !req.url.startsWith('/api')) return next()
-  // Authentication removed: allow all /api routes through
-  return next()
+  if (req.url === '/api/login' || req.url === '/api/auth-check') return next()
+
+  // check session cookie
+  const sid = getCookie(req, 'lw_session')
+  if (sid && validateSession(sid)) {
+    req.sessionId = sid
+    return next()
+  }
+
+  // header fallback
+  const provided = req.headers['x-access-password'] || (req.query && req.query.password)
+  if (provided && provided === PASSWORD) return next()
+
+  // session id via header (allows client to persist session in localStorage)
+  const sidHeader = req.headers['x-session-id']
+  if (sidHeader && validateSession(sidHeader)) {
+    req.sessionId = sidHeader
+    return next()
+  }
+
+  return res.status(401).json({ error: 'Unauthorized' })
 })
 
 const ANAM_API_KEY = process.env.ANAM_API_KEY
@@ -85,13 +105,18 @@ app.post('/api/anam/session-token', async (req, res) => {
   }
 })
 
-  // Login route - authentication removed; create session if requested
+  // Login route - accepts { username, password } and sets HttpOnly cookie
   app.post('/api/login', (req, res) => {
-    const { username } = req.body || {}
+    const { username, password } = req.body || {}
+    if (!password || password !== PASSWORD) {
+      return res.status(401).json({ error: 'Invalid credentials' })
+    }
     const id = createSession(username || null)
     let cookie = `lw_session=${encodeURIComponent(id)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(SESSION_TTL/1000)}`
     if (process.env.NODE_ENV === 'production') cookie += '; Secure'
     res.setHeader('Set-Cookie', cookie)
+    // Also return the session id in JSON so dev clients can persist it across
+    // page reloads (useful when cookies are not reliably sent in dev).
     res.json({ ok: true, sessionId: id })
   })
 
@@ -110,11 +135,12 @@ app.post('/api/anam/session-token', async (req, res) => {
       const s = SESSIONS.get(sid)
       return res.json({ ok: true, username: s ? s.username : null })
     }
-    // Authentication removed: always allow access
-    return res.json({ ok: true, username: null })
+    const provided = req.headers['x-access-password'] || (req.query && req.query.password)
+    if (provided && provided === PASSWORD) return res.json({ ok: true, username: null })
+    return res.status(401).json({ error: 'Unauthorized' })
   })
 
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`)
 })

@@ -2,9 +2,10 @@ import { useEffect, useState, useRef } from 'react'
 import './App.css'
 import AnamAvatar from './AnamAvatar'
 import PersonDetection from './PersonDetection'
+import Login from './Login'
 
 const DEFAULT_PERSONA_CONFIG = Object.freeze({
-  personaId: '1786815f-fe91-4880-8a54-2a572206dd0e',
+  personaId: 'fff175f8-0170-453b-be4b-360730a0f328',
   voiceId: '5d67e1e3-8375-4185-ac84-b05464255d9c',
   systemPrompt: 'You are helpful assistant.',
   quality: 'high',
@@ -19,10 +20,9 @@ function App() {
   const [sessionToken, setSessionToken] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  // Authentication has been removed server-side; start authenticated
-  const [authenticated, setAuthenticated] = useState(true)
+  const [authenticated, setAuthenticated] = useState(false)
   const [authPassword, setAuthPassword] = useState(null)
-  const [authUsername, setAuthUsername] = useState('The Host')
+  const [authUsername, setAuthUsername] = useState(null)
   const [authSessionId, setAuthSessionId] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isStreamConnected, setIsStreamConnected] = useState(false)
@@ -36,8 +36,29 @@ function App() {
     try {
       const sid = localStorage.getItem('lw:sessionId')
       if (sid) {
-        // restore stored session id for header fallback (do not call backend)
         setAuthSessionId(sid)
+        // attempt to validate session with backend using header fallback
+        ;(async () => {
+          try {
+            const res = await fetch('/api/auth-check', {
+              method: 'GET',
+              headers: { 'x-session-id': sid },
+              credentials: 'include',
+            })
+            if (res.ok) {
+              const data = await res.json().catch(() => ({}))
+              setAuthUsername(data.username || 'The Host')
+              setAuthenticated(true)
+            } else {
+              // invalid sessionId -> clear
+              localStorage.removeItem('lw:sessionId')
+              setAuthSessionId(null)
+            }
+          } catch (e) {
+            // network error; keep sessionId but don't authenticate yet
+            console.warn('Auth-check failed:', e)
+          }
+        })()
       }
     } catch (e) {
       // ignore storage errors
@@ -48,8 +69,6 @@ function App() {
       document.body.style.overflow = ''
     }
   }, [isFullscreen])
-
-  // No global auth-check — authentication removed server-side
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev)
@@ -154,9 +173,9 @@ function App() {
   }
 
   const handleAuthenticated = ({ username, password }) => {
-    // No-op: server no longer requires authentication
-    setAuthUsername(username || 'The Host')
+    setAuthUsername(username || null)
     setAuthPassword(password || null)
+    // if login provided a sessionId (Login component persists it), read it
     try {
       const sid = localStorage.getItem('lw:sessionId')
       if (sid) setAuthSessionId(sid)
@@ -187,7 +206,9 @@ function App() {
     setAuthSessionId(null)
   }
 
-  // Auth removed — always render the app UI
+  if (!authenticated) {
+    return <Login onAuthenticated={handleAuthenticated} />
+  }
 
   return (
     <div className={`app${isFullscreen ? ' app--fullscreen' : ''}`}>
@@ -204,6 +225,28 @@ function App() {
               className="primary-button"
             >
               {loading ? 'Connecting…' : 'Launch Stream'}
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              className="ghost-button ghost-button--icon logout-button"
+              aria-label="Logout"
+              title="Logout"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" width="20" height="20">
+                <path
+                  d="M12 2v10"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.75"
+                />
+                <path
+                  d="M5.07 6.1a8 8 0 1 0 13.86 0"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.75"
+                />
+              </svg>
             </button>
           </div>
           {error && (
