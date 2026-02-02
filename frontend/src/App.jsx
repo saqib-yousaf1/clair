@@ -4,7 +4,7 @@ import AnamAvatar from './AnamAvatar'
 import PersonDetection from './PersonDetection'
 
 const DEFAULT_PERSONA_CONFIG = Object.freeze({
-  personaId: '9527ce11-420e-4746-8172-a45bdd429426',
+  personaId: '1786815f-fe91-4880-8a54-2a572206dd0e',
   voiceId: '5d67e1e3-8375-4185-ac84-b05464255d9c',
   systemPrompt: 'You are helpful assistant.',
   quality: 'high',
